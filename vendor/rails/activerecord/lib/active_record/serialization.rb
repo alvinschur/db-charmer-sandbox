@@ -1,13 +1,10 @@
-require 'active_support/json'
-
 module ActiveRecord #:nodoc:
   module Serialization
     class Serializer #:nodoc:
       attr_reader :options
 
-      def initialize(record, options = nil)
-        @record = record
-        @options = options ? options.dup : {}
+      def initialize(record, options = {})
+        @record, @options = record, options.dup
       end
 
       # To replicate the behavior in ActiveRecord#attributes,

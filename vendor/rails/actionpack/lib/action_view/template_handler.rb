@@ -18,7 +18,7 @@ module ActionView
     end
   end
 
-  class TemplateHandler
+  class TemplateHandler #:nodoc:
     def self.call(template)
       "#{name}.new(self).render(template, local_assigns)"
     end

@@ -1,5 +1,3 @@
-require 'active_support/core_ext/array/wrapper'
-
 class Hash
   # Returns a JSON string representing the hash.
   #
@@ -7,7 +5,7 @@ class Hash
   # the hash keys. For example:
   #
   #   { :name => "Konata Izumi", 'age' => 16, 1 => 2 }.to_json
-  #   # => {"name": "Konata Izumi", "1": 2, "age": 16}
+  #   # => {"name": "Konata Izumi", 1: 2, "age": 16}
   #
   # The keys in the JSON string are unordered due to the nature of hashes.
   #
@@ -30,27 +28,20 @@ class Hash
   # would pass the <tt>:include => :posts</tt> option to <tt>users</tt>,
   # allowing the posts association in the User model to be converted to JSON
   # as well.
-  def to_json(options = nil) #:nodoc:
-    hash = as_json(options)
+  def to_json(options = {}) #:nodoc:
+    hash_keys = self.keys
 
-    result = '{'
-    result << hash.map do |key, value|
-      "#{ActiveSupport::JSON.encode(key.to_s)}:#{ActiveSupport::JSON.encode(value, options)}"
-    end * ','
-    result << '}'
-  end
+    if options[:except]
+      hash_keys = hash_keys - Array(options[:except])
+    elsif options[:only]
+      hash_keys = hash_keys & Array(options[:only])
+    end
 
-  def as_json(options = nil) #:nodoc:
-    if options
-      if attrs = options[:except]
-        except(*Array.wrap(attrs))
-      elsif attrs = options[:only]
-        slice(*Array.wrap(attrs))
-      else
-        self
-      end
-    else
-      self
+    returning result = '{' do
+      result << hash_keys.map do |key|
+        "#{ActiveSupport::JSON.encode(key)}: #{ActiveSupport::JSON.encode(self[key], options)}"
+      end * ', '
+      result << '}'
     end
   end
 end

@@ -1,5 +1,4 @@
 require 'tzinfo'
-
 module ActiveSupport
   # A Time-like class that can represent a time in any time zone. Necessary because standard Ruby Time instances are
   # limited to UTC and the system's <tt>ENV['TZ']</tt> zone.
@@ -108,24 +107,23 @@ module ActiveSupport
     end
     alias_method :iso8601, :xmlschema
 
-    # Coerces the date to a string for JSON encoding.
+    # Returns a JSON string representing the TimeWithZone. If ActiveSupport.use_standard_json_time_format is set to
+    # true, the ISO 8601 format is used.
     #
-    # ISO 8601 format is used if ActiveSupport::JSON::Encoding.use_standard_json_time_format is set.
+    # ==== Examples:
     #
-    # ==== Examples
-    #
-    #   # With ActiveSupport::JSON::Encoding.use_standard_json_time_format = true
+    #   # With ActiveSupport.use_standard_json_time_format = true
     #   Time.utc(2005,2,1,15,15,10).in_time_zone.to_json
     #   # => "2005-02-01T15:15:10Z"
     #
-    #   # With ActiveSupport::JSON::Encoding.use_standard_json_time_format = false
+    #   # With ActiveSupport.use_standard_json_time_format = false
     #   Time.utc(2005,2,1,15,15,10).in_time_zone.to_json
     #   # => "2005/02/01 15:15:10 +0000"
-    def as_json(options = nil)
-      if ActiveSupport::JSON::Encoding.use_standard_json_time_format
-        xmlschema
+    def to_json(options = nil)
+      if ActiveSupport.use_standard_json_time_format
+        xmlschema.inspect
       else
-        %(#{time.strftime("%Y/%m/%d %H:%M:%S")} #{formatted_offset(false)})
+        %("#{time.strftime("%Y/%m/%d %H:%M:%S")} #{formatted_offset(false)}")
       end
     end
 
@@ -156,7 +154,6 @@ module ActiveSupport
         "#{time.strftime("%Y-%m-%d %H:%M:%S")} #{formatted_offset(false, 'UTC')}" # mimicking Ruby 1.9 Time#to_s format
       end
     end
-    alias_method :to_formatted_s, :to_s
 
     # Replaces <tt>%Z</tt> and <tt>%z</tt> directives with +zone+ and +formatted_offset+, respectively, before passing to
     # Time#strftime, so that zone information is correct
@@ -231,7 +228,7 @@ module ActiveSupport
     def advance(options)
       # If we're advancing a value of variable length (i.e., years, weeks, months, days), advance from #time,
       # otherwise advance from #utc, for accuracy when moving across DST boundaries
-      if options.values_at(:years, :weeks, :months, :days).any?
+      if options.detect {|k,v| [:years, :weeks, :months, :days].include? k}
         method_missing(:advance, options)
       else
         utc.advance(options).in_time_zone(time_zone)
@@ -240,9 +237,9 @@ module ActiveSupport
 
     %w(year mon month day mday wday yday hour min sec to_date).each do |method_name|
       class_eval <<-EOV
-        def #{method_name}     # def year
-          time.#{method_name}  #   time.year
-        end                    # end
+        def #{method_name}
+          time.#{method_name}
+        end
       EOV
     end
 
@@ -329,7 +326,7 @@ module ActiveSupport
       end
 
       def duration_of_variable_length?(obj)
-        ActiveSupport::Duration === obj && obj.parts.any? {|p| [:years, :months, :days].include? p[0] }
+        ActiveSupport::Duration === obj && obj.parts.flatten.detect {|p| [:years, :months, :days].include? p }
       end
   end
 end

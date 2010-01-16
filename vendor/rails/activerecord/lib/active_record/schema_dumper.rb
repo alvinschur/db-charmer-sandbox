@@ -7,8 +7,6 @@ module ActiveRecord
   class SchemaDumper #:nodoc:
     private_class_method :new
     
-    ##
-    # :singleton-method:
     # A list of tables which should not be dumped to the schema. 
     # Acceptable values are strings as well as regexp.
     # This setting is only used if ActiveRecord::Base.schema_format == :ruby
@@ -78,14 +76,11 @@ HEADER
         begin
           tbl = StringIO.new
 
-          # first dump primary key column
           if @connection.respond_to?(:pk_and_sequence_for)
             pk, pk_seq = @connection.pk_and_sequence_for(table)
-          elsif @connection.respond_to?(:primary_key)
-            pk = @connection.primary_key(table)
           end
           pk ||= 'id'
-          
+
           tbl.print "  create_table #{table.inspect}"
           if columns.detect { |c| c.name == pk }
             if pk != 'id'
@@ -97,7 +92,6 @@ HEADER
           tbl.print ", :force => true"
           tbl.puts " do |t|"
 
-          # then dump all non-primary key columns
           column_specs = columns.map do |column|
             raise StandardError, "Unknown type '#{column.sql_type}' for column '#{column.name}'" if @types[column.type].nil?
             next if column.name == pk

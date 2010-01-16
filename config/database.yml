@@ -39,6 +39,23 @@ test:
     database: db_charmer_sandbox_test
 
 #----------------------------------------------------------------
+test22:
+  <<: *common
+  database: db_charmer_sandbox22_test
+
+  # logs database
+  logs:
+    <<: *common
+    database: db_charmer_logs22_test
+
+  # logs database
+  slave01:
+    <<: *common
+    username: db_charmer_ro
+    database: db_charmer_sandbox22_test
+
+
+#----------------------------------------------------------------
 production:
   <<: *common
   database: db_charmer_sandbox_production
